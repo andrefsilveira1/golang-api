@@ -33,6 +33,23 @@ func NewPostgresDb() (*PostStore, error) {
 	}, nil
 }
 
+func (s *PostStore) Start() error {
+	return s.CreateAccountTable()
+}
+
+func (s *PostStore) CreateAccountTable() error {
+	query := `CREATE TABLE IF NOT EXISTS account (
+		id serial primary key,
+		name varchar(50),
+		number serial,
+		balance serial,
+		created_at timestamp
+	)`
+
+	_, err := s.db.Exec(query)
+	return err
+}
+
 func (s *PostStore) CreateAccount(*Account) error {
 	return nil
 }
