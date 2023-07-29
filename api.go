@@ -13,12 +13,14 @@ type apiError struct {
 }
 type Server struct {
 	address string
+	db      Database
 }
 type apiFunc func(http.ResponseWriter, *http.Request) error
 
-func NewServer(addrs string) *Server {
+func NewServer(addrs string, database Database) *Server {
 	return &Server{
 		address: addrs,
+		db:      database,
 	}
 }
 
