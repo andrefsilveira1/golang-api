@@ -19,9 +19,8 @@ type PostAccount struct {
 
 func NewAccount(name string) *Account {
 	return &Account{
-		Id:         rand.Intn(100000),
 		Name:       name,
-		BankNumber: int64(rand.Intn(10000000000)),
+		BankNumber: int64(rand.Intn(100000)),
 		CreatedAt:  time.Now(),
 	}
 }

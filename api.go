@@ -26,15 +26,16 @@ func NewServer(addrs string, database Database) *Server {
 
 func (s *Server) Start() {
 	router := mux.NewRouter()
+	router.HandleFunc("/accounts", makeHTTPHandleFunc(s.handleGetAccounts))
 	router.HandleFunc("/account", makeHTTPHandleFunc(s.handleAccount))
-	router.HandleFunc("/account/{id}", makeHTTPHandleFunc(s.handleGetAccount))
+	router.HandleFunc("/account/{id}", makeHTTPHandleFunc(s.handleGetAccountById))
 	fmt.Println("API server running on port: ", s.address)
 	http.ListenAndServe(s.address, router)
 }
 func (s *Server) handleAccount(w http.ResponseWriter, r *http.Request) error {
 	switch r.Method {
 	case "GET":
-		return s.handleGetAccount(w, r)
+		return s.handleGetAccounts(w, r)
 	case "POST":
 		return s.handleCreateAccount(w, r)
 	case "DELETE":
@@ -46,14 +47,32 @@ func (s *Server) handleAccount(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func (s *Server) handleGetAccount(w http.ResponseWriter, r *http.Request) error {
+func (s *Server) handleGetAccounts(w http.ResponseWriter, r *http.Request) error {
+	accs, err := s.db.GetAccounts()
+	if err != nil {
+		return err
+	}
+
+	return WriteJson(w, http.StatusOK, accs)
+}
+
+func (s *Server) handleGetAccountById(w http.ResponseWriter, r *http.Request) error {
 	id := mux.Vars(r)["id"]
 	fmt.Println("ID:", id)
 	return WriteJson(w, http.StatusOK, &Account{})
 }
 
 func (s *Server) handleCreateAccount(w http.ResponseWriter, r *http.Request) error {
-	return nil
+	req := PostAccount{}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return err
+	}
+
+	acc := NewAccount(req.Name)
+	if err := s.db.CreateAccount(acc); err != nil {
+		return err
+	}
+	return WriteJson(w, http.StatusOK, acc)
 }
 
 func (s *Server) handleTransfer(w http.ResponseWriter, r *http.Request) error {
