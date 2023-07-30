@@ -68,9 +68,17 @@ func (s *PostStore) UpdateAccount(*Account) error {
 	return nil
 }
 func (s *PostStore) DeleteAccount(id int) error {
-	return nil
+	_, err := s.db.Query("DELETE FROM account WHERE id = $1", id)
+	return err
 }
 func (s *PostStore) GetAccount(id int) (*Account, error) {
+	query, err := s.db.Query("SELECT * FROM account where id = $1", id)
+	if err != nil {
+		return nil, err
+	}
+	for query.Next() {
+		return searchAccount(query)
+	}
 	return nil, nil
 }
 
@@ -81,13 +89,21 @@ func (s *PostStore) GetAccounts() ([]*Account, error) {
 	}
 	accs := []*Account{}
 	for res.Next() {
-		account := Account{}
-		if err := res.Scan(&account.Id, &account.Name, &account.BankNumber, &account.Balance, &account.CreatedAt); err != nil {
+		account, err := searchAccount(res)
+		if err != nil {
 			return nil, err
 		}
-		accs = append(accs, &account)
+		accs = append(accs, account)
 	}
 
 	return accs, nil
 
+}
+
+func searchAccount(res *sql.Rows) (*Account, error) {
+	account := Account{}
+	if err := res.Scan(&account.Id, &account.Name, &account.BankNumber, &account.Balance, &account.CreatedAt); err != nil {
+		return nil, err
+	}
+	return &account, nil
 }
