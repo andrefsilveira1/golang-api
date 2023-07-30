@@ -68,7 +68,8 @@ func (s *PostStore) UpdateAccount(*Account) error {
 	return nil
 }
 func (s *PostStore) DeleteAccount(id int) error {
-	return nil
+	_, err := s.db.Query("DELETE FROM account WHERE id = $1", id)
+	return err
 }
 func (s *PostStore) GetAccount(id int) (*Account, error) {
 	query, err := s.db.Query("SELECT * FROM account where id = $1", id)

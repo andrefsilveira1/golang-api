@@ -30,17 +30,14 @@ func (s *Server) Start() {
 	router.HandleFunc("/accounts", makeHTTPHandleFunc(s.handleGetAccounts))
 	router.HandleFunc("/account", makeHTTPHandleFunc(s.handleAccount))
 	router.HandleFunc("/account/{id}", makeHTTPHandleFunc(s.handleGetAccountById))
+	router.HandleFunc("/account/{id}", makeHTTPHandleFunc(s.handleAccount))
 	fmt.Println("API server running on port: ", s.address)
 	http.ListenAndServe(s.address, router)
 }
 func (s *Server) handleAccount(w http.ResponseWriter, r *http.Request) error {
 	switch r.Method {
-	case "GET":
-		return s.handleGetAccounts(w, r)
 	case "POST":
 		return s.handleCreateAccount(w, r)
-	case "DELETE":
-		return s.handleDelete(w, r)
 	default:
 		WriteJson(w, http.StatusBadRequest, apiError{Error: "Invalid Method"})
 
@@ -58,17 +55,23 @@ func (s *Server) handleGetAccounts(w http.ResponseWriter, r *http.Request) error
 }
 
 func (s *Server) handleGetAccountById(w http.ResponseWriter, r *http.Request) error {
-	idstr := mux.Vars(r)["id"]
-	id, err := strconv.Atoi(idstr)
-	if err != nil {
-		return err
-	}
-	account, err := s.db.GetAccount(id)
-	if err != nil {
-		return err
-	}
+	if r.Method == "GET" {
+		id, err := convertId(r)
+		if err != nil {
+			return err
+		}
 
-	return WriteJson(w, http.StatusOK, account)
+		account, err := s.db.GetAccount(id)
+		if err != nil {
+			return err
+		}
+
+		return WriteJson(w, http.StatusOK, account)
+	}
+	if r.Method == "DELETE" {
+		return s.handleDelete(w, r)
+	}
+	return nil
 }
 
 func (s *Server) handleCreateAccount(w http.ResponseWriter, r *http.Request) error {
@@ -89,7 +92,14 @@ func (s *Server) handleTransfer(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) error {
-	return nil
+	id, err := convertId(r)
+	if err != nil {
+		return err
+	}
+	if err := s.db.DeleteAccount(id); err != nil {
+		return err
+	}
+	return WriteJson(w, http.StatusOK, map[string]int{"deleted": id})
 }
 
 func makeHTTPHandleFunc(f apiFunc) http.HandlerFunc {
@@ -105,4 +115,14 @@ func WriteJson(w http.ResponseWriter, status int, v any) error {
 	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "application/json")
 	return json.NewEncoder(w).Encode(v)
+}
+
+func convertId(r *http.Request) (int, error) {
+	idstr := mux.Vars(r)["id"]
+	id, err := strconv.Atoi(idstr)
+	if err != nil {
+		return id, err
+	}
+
+	return id, nil
 }
