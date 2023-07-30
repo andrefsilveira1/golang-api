@@ -88,7 +88,12 @@ func (s *Server) handleCreateAccount(w http.ResponseWriter, r *http.Request) err
 }
 
 func (s *Server) handleTransfer(w http.ResponseWriter, r *http.Request) error {
-	return nil
+	req := &transferRequest{}
+	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+		return err
+	}
+	defer r.Body.Close()
+	return WriteJson(w, http.StatusOK, r.Body)
 }
 
 func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) error {
