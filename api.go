@@ -31,6 +31,7 @@ func (s *Server) Start() {
 	router.HandleFunc("/account", makeHTTPHandleFunc(s.handleAccount))
 	router.HandleFunc("/account/{id}", makeHTTPHandleFunc(s.handleGetAccountById))
 	router.HandleFunc("/account/{id}", makeHTTPHandleFunc(s.handleAccount))
+	router.HandleFunc("/transfer", makeHTTPHandleFunc(s.handleTransfer))
 	fmt.Println("API server running on port: ", s.address)
 	http.ListenAndServe(s.address, router)
 }
