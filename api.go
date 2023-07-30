@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -57,9 +58,17 @@ func (s *Server) handleGetAccounts(w http.ResponseWriter, r *http.Request) error
 }
 
 func (s *Server) handleGetAccountById(w http.ResponseWriter, r *http.Request) error {
-	id := mux.Vars(r)["id"]
-	fmt.Println("ID:", id)
-	return WriteJson(w, http.StatusOK, &Account{})
+	idstr := mux.Vars(r)["id"]
+	id, err := strconv.Atoi(idstr)
+	if err != nil {
+		return err
+	}
+	account, err := s.db.GetAccount(id)
+	if err != nil {
+		return err
+	}
+
+	return WriteJson(w, http.StatusOK, account)
 }
 
 func (s *Server) handleCreateAccount(w http.ResponseWriter, r *http.Request) error {
